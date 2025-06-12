@@ -1,0 +1,68 @@
+name: Python Flask CI/CD
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.10", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run basic tests
+      run: |
+        python -m pytest -v tests/
+
+    - name: Verify Flask server starts
+      run: |
+        nohup python server.py > server.log 2>&1 &
+        sleep 5
+        curl http://localhost:5000 | grep "Hello from Flask"
+        kill $(lsof -t -i:5000)
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.set-artifact.outputs.name }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Create deployment package
+      run: |
+        mkdir -p package
+        cp app.py package/
+        [ -d src ] && cp -r src package/
+        echo "FROM python:3.10-slim
+        WORKDIR /app
+        COPY . .
+        RUN pip install flask gunicorn
+        CMD gunicorn --bind :$PORT app:app" > package/Dockerfile
+
+    - name: Set artifact name
+      id: set-artifact
+      run: echo "name=flask-app-$(date +%s)" >> $GITHUB_OUTPUT
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.set-artifact.outputs.name }}
+        path: package/
