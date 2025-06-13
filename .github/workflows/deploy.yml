@@ -94,6 +94,7 @@ jobs:
         docker stop flask-container || true
         docker rm flask-container || true
         docker build -t flask-app .
+        sleep 30
         docker run -d `
           --name flask-container `
           -p 5000:5000 `
