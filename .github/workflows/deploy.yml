@@ -104,7 +104,7 @@ jobs:
         docker stop flask-app || true
         docker rm flask-app || true
         docker build -t flask-app .
-        sleep 30
+        sleep 15
         docker run -d \
           --name flask-app \
           --restart always \
@@ -115,6 +115,6 @@ jobs:
 
     - name: Verify deployment
       run: |
-        sleep 30
+        sleep 15
         curl -sSf http://${{ secrets.VM_IP }} | grep "Welcome" || (echo "Deployment verification failed!" && exit 1)
         echo "Application deployed successfully!"
