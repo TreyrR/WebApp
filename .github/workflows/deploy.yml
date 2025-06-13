@@ -79,28 +79,28 @@ jobs:
       with:
         name: ${{ needs.build.outputs.artifact-name }}
 
-    - name: Install SSH key
-      uses: actions/checkout@v4
-      with:
-        ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-
-    - name: Add VM to known host
+    - name: Setup SSH access
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.VM_IP }} ecdsa-sha2-nistp256 ${{ secrets.VM_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
+        sudo apt-get install -y sshpass
+        sshpass -p "${{ secrets.VM_SSH_PASSWORD }}" ssh-copy-id \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          -f \
+          ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}
 
     - name: Copy files to VM
       run: |
-        scp -r * ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}:/tmp/flask-app/
+        scp -r * ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}:/opt/flask-app/
 
     - name: Deploy application on VM
       run: |
         ssh ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }} << 'EOF'
         cd /tmp/flask-app
-        sudo docker stop flask-app || true
-        sudo docker rm flask-app || true
-        sudo docker build -t flask-app .
-        sudo docker run -d \
+        docker stop flask-app || true
+        docker rm flask-app || true
+        docker build -t flask-app .
+        sleep 30
+        docker run -d \
           --name flask-app \
           --restart always \
           -p 80:$PORT \
