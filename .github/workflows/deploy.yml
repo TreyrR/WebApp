@@ -113,5 +113,6 @@ jobs:
 
     - name: Verify deployment
       run: |
+        sleep 30
         curl -sSf http://${{ secrets.VM_IP }} | grep "Welcome" || (echo "Deployment verification failed!" && exit 1)
         echo "Application deployed successfully!"
