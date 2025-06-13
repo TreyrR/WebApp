@@ -70,41 +70,45 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    environment: production
 
     steps:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: ${{ needs.build.outputs.artifact-name }}
-        path: ./downloaded-artifact
 
-    - name: Show directory structure
-      run: |
-        Get-ChildItem -Recurse -Path . | Format-Table FullName
+    - name: Install SSH key
+      uses: actions/checkout@v4
+      with:
+        ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
 
-    - name: Set up Docker
+    - name: Add VM to known hosts
       run: |
-        # Проверяем доступность Docker
-        docker --version
+        mkdir -p ~/.ssh
+        echo "${{ secrets.VM_IP }} ecdsa-sha2-nistp256 ${{ secrets.VM_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
 
-    - name: Build and run container
+    - name: Copy files to VM
       run: |
-        cd downloaded-artifact
-        docker stop flask-container || true
-        docker rm flask-container || true
-        docker build -t flask-app .
-        sleep 30
-        docker run -d `
-          --name flask-container `
-          -p 5000:5000 `
-          -e FLASK_ENV=production `
+        scp -r * ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}:/opt/flask-app/
+
+    - name: Deploy application on VM
+      run: |
+        ssh ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }} << 'EOF'
+        cd /opt/flask-app
+        sudo docker stop flask-app || true
+        sudo docker rm flask-app || true
+        sudo docker build -t flask-app .
+        sudo docker run -d \
+          --name flask-app \
+          --restart always \
+          -p 80:$PORT \
+          -e FLASK_ENV=production \
           flask-app
-        
-        Start-Sleep -Seconds 15
-        $response = Invoke-WebRequest -Uri "http://localhost:5000" -UseBasicParsing
-        if (-not ($response.Content -match "Welcome")) {
-          Write-Error "Deployment verification failed"
-          exit 1
-        }
-        Write-Output "Deployment successful"
+        EOF
+
+    - name: Verify deployment
+      run: |
+        curl -sSf http://${{ secrets.VM_IP }} | grep "Welcome" || (echo "Deployment verification failed!" && exit 1)
+        echo "Application deployed successfully!"
