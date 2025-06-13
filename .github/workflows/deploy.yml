@@ -58,7 +58,7 @@ jobs:
         RUN pip install --no-cache-dir -r requirements.txt
         COPY . .
         EXPOSE 5000
-        CMD ["python", "server.py"]" > package/Dockerfile
+        CMD [\"python\", \"server.py\"]" > package/Dockerfile
 
     - name: Set artifact name
       id: set-artifact
