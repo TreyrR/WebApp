@@ -76,11 +76,34 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: ${{ needs.package.outputs.artifact-name }}
+        name: ${{ needs.build.outputs.artifact-name }}
 
-    - name: Build and push to Render
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
       run: |
-        docker build -t ${{ steps.set-artifact.outputs.name }} .
-        docker login -u api -p ${{ secrets.RENDER_API_KEY }} registry.render.com
-        docker tag ${{ steps.set-artifact.outputs.name }} registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/${{ steps.set-artifact.outputs.name }}
-        docker push registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/${{ steps.set-artifact.outputs.name }}
+        # Установка зависимостей
+        sudo apt-get update
+        sudo apt-get install -y curl git bash
+
+        # Проверка доступа
+        curl -v https://cli.render.com/install.sh
+
+        # Установка CLI с обработкой ошибок
+        if ! curl -fsSL https://cli.render.com/install.sh | bash; then
+          echo "⚠️ Failed to install Render CLI"
+          echo "Trying alternative method..."
+          wget https://cli.render.com/install.sh -O install.sh
+          bash install.sh
+        fi
+
+        # Проверка установки
+        render --version
+
+        # Деплой с таймаутом
+        timeout 300 render services create \
+          --name flask-server-${{ github.run_id }} \
+          --type web \
+          --dockerfile Dockerfile \
+          --env PORT=$PORT \
+          --api-key $RENDER_API_KEY || echo "Deploy timeout reached"
