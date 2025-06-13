@@ -104,7 +104,7 @@ jobs:
         docker run -d \
           --name flask-app \
           --restart always \
-          -p 80:$PORT \
+          -p 80:${{ secrets.PORT }} \
           -e FLASK_ENV=production \
           flask-app
         EOF
