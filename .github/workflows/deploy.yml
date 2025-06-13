@@ -84,7 +84,6 @@ jobs:
       run: |
         # Проверяем доступность Docker
         docker --version
-        docker-compose --version
 
     - name: Build and run container
       run: |
