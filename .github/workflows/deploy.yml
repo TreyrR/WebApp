@@ -78,14 +78,9 @@ jobs:
       with:
         name: ${{ needs.package.outputs.artifact-name }}
 
-    - name: Deploy to Render
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      run: |
-        curl -fsSL https://cli.render.com/install.sh | bash
-        render services create \
-          --name flask-server\
-          --type web \
-          --dockerfile Dockerfile \
-          --env PORT=$PORT \
-          --api-key $RENDER_API_KEY
+    - name: Render Deploy
+      uses: render-actions/deploy@v1
+      with:
+        api-key: ${{ secrets.RENDER_API_KEY }}
+        service-name: "flask-server"
+        dockerfile: "Dockerfile"
