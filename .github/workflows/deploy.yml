@@ -91,12 +91,12 @@ jobs:
 
     - name: Copy files to VM
       run: |
-        scp -r * ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}:/opt/flask-app/
+        scp -r * ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}:/tmp/flask-app/
 
     - name: Deploy application on VM
       run: |
         ssh ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }} << 'EOF'
-        cd /opt/flask-app
+        cd /tmp/flask-app
         sudo docker stop flask-app || true
         sudo docker rm flask-app || true
         sudo docker build -t flask-app .
