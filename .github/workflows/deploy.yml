@@ -28,9 +28,9 @@ jobs:
 
     - name: Verify Flask server starts
       run: |
-        python server.py
-        sleep 5
-        curl http://localhost:5000 | grep "Hello"
+        python server.py &
+        sleep 10
+        curl http://localhost:5000 | grep "Welcome"
         kill $(lsof -t -i:5000)
 
   build:
