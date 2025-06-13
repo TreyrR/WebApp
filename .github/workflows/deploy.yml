@@ -90,7 +90,7 @@ jobs:
 
     - name: Build and run container
       run: |
-        cd downloaded-artifact/package
+        cd downloaded-artifact
         docker stop flask-container || true
         docker rm flask-container || true
         docker build -t flask-app .
