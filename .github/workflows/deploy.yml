@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  FLASK_ENV: production
+  PORT: 5000
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -62,3 +66,26 @@ jobs:
       with:
         name: ${{ steps.set-artifact.outputs.name }}
         path: package/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ needs.package.outputs.artifact-name }}
+
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        curl -fsSL https://cli.render.com/install.sh | bash
+        render services create \
+          --name flask-server\
+          --type web \
+          --dockerfile Dockerfile \
+          --env PORT=$PORT \
+          --api-key $RENDER_API_KEY
