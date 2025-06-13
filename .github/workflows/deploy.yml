@@ -78,24 +78,9 @@ jobs:
       with:
         name: ${{ needs.package.outputs.artifact-name }}
 
-    - name: Deploy via Render API
+    - name: Build and push to Render
       run: |
-        curl -X POST \
-        -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-        -H "Accept: application/json" \
-        -H "Content-Type: application/json" \
-        -d '{
-          "name": "flask-app-${{ github.run_id }}",
-          "type": "web",
-          "repo": "${{ github.repository }}",
-          "autoDeploy": "yes",
-          "serviceDetails": {
-            "env": "python",
-            "region": "oregon",
-            "plan": "starter",
-            "numInstances": 1,
-            "pullRequestPreviewsEnabled": "no",
-            "dockerfilePath": "Dockerfile"
-          }
-        }' \
-        https://api.render.com/v1/services
+        docker build -t render-flask-server .
+        docker login -u api -p ${{ secrets.RENDER_API_KEY }} registry.render.com
+        docker tag render-flask-server registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/render-flask-server
+        docker push registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/render-flask-server
