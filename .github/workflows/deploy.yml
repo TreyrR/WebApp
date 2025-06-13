@@ -51,12 +51,14 @@ jobs:
       run: |
         mkdir -p package
         cp server.py package/
-        [ -d src ] && cp -r src package/
+        [ -d src ] && cp -r src package/ && cp -r requirements.txt package/
         echo "FROM python:3.10-slim
-        WORKDIR /server
+        WORKDIR /app
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
         COPY . .
-        RUN pip install flask gunicorn
-        CMD gunicorn --bind :$PORT server:server" > package/Dockerfile
+        EXPOSE 5000
+        CMD ["python", "server.py"]" > package/Dockerfile
 
     - name: Set artifact name
       id: set-artifact
