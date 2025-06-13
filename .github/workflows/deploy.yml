@@ -69,41 +69,49 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    runs-on: windows-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: ${{ needs.build.outputs.artifact-name }}
 
-    - name: Deploy to Render
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+    - name: Set up Docker
       run: |
-        # Установка зависимостей
-        sudo apt-get update
-        sudo apt-get install -y curl git bash
+        # Проверяем доступность Docker
+        docker --version
+        docker-compose --version
 
-        # Проверка доступа
-        curl -v https://cli.render.com/install.sh
+    - name: Build and run container
+      run: |
+        # Переходим в папку с артефактами
+        cd package
+        
+        # Останавливаем и удаляем старый контейнер (если есть)
+        docker stop flask-container || true
+        docker rm flask-container || true
+        
+        # Собираем и запускаем новый контейнер
+        docker build -t flask-app .
+        docker run -d `
+          --name flask-container `
+          -p 5000:5000 `
+          -e FLASK_ENV=production `
+          flask-app
+        
+        # Проверяем работу
+        Start-Sleep -Seconds 10
+        Invoke-WebRequest -Uri "http://localhost:5000" -UseBasicParsing | Select-Object -ExpandProperty Content
 
-        # Установка CLI с обработкой ошибок
-        if ! curl -fsSL https://cli.render.com/install.sh | bash; then
-          echo "⚠️ Failed to install Render CLI"
-          echo "Trying alternative method..."
-          wget https://cli.render.com/install.sh -O install.sh
-          bash install.sh
-        fi
-
-        # Проверка установки
-        render --version
-
-        # Деплой с таймаутом
-        timeout 300 render services create \
-          --name flask-server-${{ github.run_id }} \
-          --type web \
-          --dockerfile Dockerfile \
-          --env PORT=$PORT \
-          --api-key $RENDER_API_KEY || echo "Deploy timeout reached"
+    - name: Verify deployment
+      run: |
+        $response = Invoke-WebRequest -Uri "http://localhost:5000" -UseBasicParsing
+        if (-not ($response.Content -match "Welcome")) {
+          Write-Error "Deployment verification failed"
+          exit 1
+        }
+        Write-Output "Deployment successful"
