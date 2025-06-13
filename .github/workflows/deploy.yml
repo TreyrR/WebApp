@@ -82,12 +82,11 @@ jobs:
     - name: Setup SSH access
       run: |
         sudo apt-get install -y sshpass
-        ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -q -N ""
+        ssh-keygen -f ~/.ssh/id_rsa -q -N ""
+        sleep 5
         chmod 600 ~/.ssh/id_rsa
         sshpass -p "${{ secrets.VM_SSH_PASSWORD }}" ssh-copy-id \
           -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
-          -f \
           ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_IP }}
 
     - name: Copy files to VM
