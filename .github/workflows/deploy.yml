@@ -84,7 +84,7 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
 
-    - name: Add VM to known hosts
+    - name: Add VM to known host
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.VM_IP }} ecdsa-sha2-nistp256 ${{ secrets.VM_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
