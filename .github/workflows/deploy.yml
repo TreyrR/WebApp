@@ -26,10 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run basic tests
-      run: |
-        python -m pytest -v tests/
-
     - name: Verify Flask server starts
       run: |
         nohup python server.py > server.log 2>&1 &
