@@ -45,17 +45,17 @@ jobs:
     - name: Create deployment package
       run: |
         mkdir -p package
-        cp app.py package/
+        cp server.py package/
         [ -d src ] && cp -r src package/
         echo "FROM python:3.10-slim
-        WORKDIR /app
+        WORKDIR /server
         COPY . .
         RUN pip install flask gunicorn
-        CMD gunicorn --bind :$PORT app:app" > package/Dockerfile
+        CMD gunicorn --bind :$PORT server:server" > package/Dockerfile
 
     - name: Set artifact name
       id: set-artifact
-      run: echo "name=flask-app-$(date +%s)" >> $GITHUB_OUTPUT
+      run: echo "name=flask-server-$(date +%s)" >> $GITHUB_OUTPUT
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
