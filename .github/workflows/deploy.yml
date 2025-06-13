@@ -81,7 +81,7 @@ jobs:
       with:
         name: ${{ needs.build.outputs.artifact-name }}
 
-    - name: Setup SSH accesss
+    - name: Setup SSH access
       run: |
         sudo apt-get install -y sshpass
         ssh-keygen -f ~/.ssh/id_rsa -q -N ""
