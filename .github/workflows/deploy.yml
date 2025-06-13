@@ -80,7 +80,7 @@ jobs:
 
     - name: Build and push to Render
       run: |
-        docker build -t render-flask-server .
+        docker build -t ${{ steps.set-artifact.outputs.name }} .
         docker login -u api -p ${{ secrets.RENDER_API_KEY }} registry.render.com
-        docker tag render-flask-server registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/render-flask-server
-        docker push registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/render-flask-server
+        docker tag ${{ steps.set-artifact.outputs.name }} registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/${{ steps.set-artifact.outputs.name }}
+        docker push registry.render.com/${{ secrets.RENDER_SERVICE_NAME }}/${{ steps.set-artifact.outputs.name }}
